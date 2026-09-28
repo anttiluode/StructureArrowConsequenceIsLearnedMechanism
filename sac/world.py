@@ -41,3 +41,30 @@ def make_v0_world() -> RouteWorld:
 def reversal_histories() -> tuple[list[int], list[int]]:
     forward = [0, 1, 2]
     return forward, list(reversed(forward))
+
+
+def train_balanced_history(
+    world: RouteWorld,
+    mechanism,
+    rewarded_arm: str,
+    seed: int,
+    shuffle_consequence: bool = False,
+) -> list[tuple[str, float]]:
+    """Present equal A/B histories; deliver one delayed outcome at each terminal."""
+    import numpy as np
+
+    arms = ["A"] * mechanism.config.episodes_per_arm + ["B"] * mechanism.config.episodes_per_arm
+    rng = np.random.default_rng(seed)
+    rng.shuffle(arms)
+    rewards = np.asarray([1.0 if arm == rewarded_arm else -1.0 for arm in arms], dtype=float)
+    if shuffle_consequence:
+        rewards = rng.permutation(rewards)
+
+    ledger: list[tuple[str, float]] = []
+    for arm, reward in zip(arms, rewards.tolist()):
+        mechanism.clear_eligibility()
+        for i, j in world.train_episode(arm):
+            mechanism.observe(i, j)
+        mechanism.consequence(reward)
+        ledger.append((arm, reward))
+    return ledger
