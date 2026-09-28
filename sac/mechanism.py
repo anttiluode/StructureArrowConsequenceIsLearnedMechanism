@@ -10,9 +10,9 @@ from .config import V0Config
 
 def _normalized(matrix: np.ndarray) -> np.ndarray:
     scale = float(np.max(np.abs(matrix))) if matrix.size else 0.0
-    if scale == 0.0:
-        return matrix.astype(float, copy=True)
-    return matrix.astype(float, copy=True) / scale
+    result = matrix.astype(float, copy=True) if scale == 0.0 else matrix.astype(float, copy=True) / scale
+    result.setflags(write=False)
+    return result
 
 
 @dataclass(frozen=True)
