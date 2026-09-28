@@ -43,7 +43,6 @@ def test_repeated_traversal_preserves_normalized_arrow_semantics():
     assert once.choose_next(1, {"S", "A"}) == 2
     assert triple.choose_next(1, {"S", "A"}) == 2
 
-
 from sac.world import make_v0_world, reversal_histories
 
 
