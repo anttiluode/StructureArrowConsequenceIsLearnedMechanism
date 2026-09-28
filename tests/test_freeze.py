@@ -65,3 +65,13 @@ def test_v0_aggregate_meets_predeclared_gate_thresholds():
     assert receipt["gates"]["SAC"]["shuffled_fork_accuracy"] <= 0.625
     assert receipt["freeze_integrity"] is True
     assert receipt["illegal_edge_choices"] == 0
+
+
+def test_frozen_matrices_reject_external_mutation():
+    import pytest
+
+    _, frozen = _trained("A", seed=0)
+    for matrix in (frozen.S, frozen.A, frozen.C):
+        assert matrix.flags.writeable is False
+        with pytest.raises(ValueError):
+            matrix[0, 0] = 123.0
