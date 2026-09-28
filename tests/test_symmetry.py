@@ -42,3 +42,40 @@ def test_repeated_traversal_preserves_normalized_arrow_semantics():
     np.testing.assert_allclose(once.A, triple.A, atol=1e-12)
     assert once.choose_next(1, {"S", "A"}) == 2
     assert triple.choose_next(1, {"S", "A"}) == 2
+
+
+from sac.world import make_v0_world, reversal_histories
+
+
+def _tie_as_chance(choice, target):
+    return 0.5 if choice is None else float(choice == target)
+
+
+def test_gate_s_structure_is_not_direction():
+    forward, reverse = reversal_histories()
+    fwd = _train(forward).freeze()
+    rev = _train(reverse).freeze()
+
+    np.testing.assert_allclose(fwd.S, rev.S, atol=1e-12)
+    np.testing.assert_allclose(fwd.A, -rev.A, atol=1e-12)
+
+    middle = forward[1]
+    s_accuracy = np.mean([
+        _tie_as_chance(fwd.choose_next(middle, {"S"}), forward[2]),
+        _tie_as_chance(rev.choose_next(middle, {"S"}), reverse[2]),
+    ])
+    sa_accuracy = np.mean([
+        _tie_as_chance(fwd.choose_next(middle, {"S", "A"}), forward[2]),
+        _tie_as_chance(rev.choose_next(middle, {"S", "A"}), reverse[2]),
+    ])
+
+    assert s_accuracy == 0.5
+    assert sa_accuracy == 1.0
+
+
+def test_v0_world_has_matched_fixed_topology():
+    world = make_v0_world()
+    assert world.train_episode("A") == [(0, 1), (1, 2), (2, 3)]
+    assert world.train_episode("B") == [(0, 4), (4, 5), (5, 6)]
+    assert world.train_episode("A", reversed=True) == [(3, 2), (2, 1), (1, 0)]
+    assert world.train_episode("B", reversed=True) == [(6, 5), (5, 4), (4, 0)]
